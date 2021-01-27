@@ -1,0 +1,68 @@
+version: '3.7'
+
+networks:
+  sample_network:
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: backend:latest
+    container_name: flask_rest_example_app_container
+    ports:
+      - 7970:7970
+    command: bash -c "./wait-for-it.sh mysql:3306 -- && ./entrypoint.dev.sh"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - LOCAL_DOCKER=1
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      sample_network:
+
+  worker:
+    image: backend:latest
+    command: bash -c "./wait-for-it.sh mysql:3306 -- && python manage.py run_worker"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=True
+      - LOCAL_DOCKER=True
+    depends_on:
+      - mysql
+      - backend
+      - redis
+    networks:
+      sample_network:
+
+  redis:
+    image: redis:6.0.5-alpine
+    ports:
+      - 6379:6379
+    networks:
+      sample_network:
+
+  mysql:
+    container_name: mysql
+    # let's grab from mysql 5.7 image
+    image: mysql:5.7
+    volumes:
+      # pass volume named mysql-data to mysql container
+      - ./data/mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    ports:
+      - '3310:3306'
+    environment:
+      # credentials
+      - MYSQL_USER=local_username
+      - MYSQL_ROOT_PASSWORD=local_password
+      - MYSQL_PASSWORD=local_password
+      - MYSQL_DATABASE=flask_rest_example_app_mysql_db
+    networks:
+      sample_network:

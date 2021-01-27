@@ -1,0 +1,24 @@
+version: '3.7'
+
+networks:
+  local_network:
+
+services:
+  local_mysql:
+    container_name: local_mysql
+    # let's grab from mysql 5.7 image
+    image: mysql:5.7
+    volumes:
+      # pass volume named mysql-data to mysql container
+      - ./data/mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    ports:
+      - '3310:3306'
+    environment:
+      # credentials
+      - MYSQL_USER=local_username
+      - MYSQL_ROOT_PASSWORD=local_password
+      - MYSQL_PASSWORD=local_password
+      - MYSQL_DATABASE=local_mysql_db
+    networks:
+      local_network:

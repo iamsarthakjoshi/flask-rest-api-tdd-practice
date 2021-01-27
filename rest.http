@@ -1,0 +1,2 @@
+GET http://0.0.0.0:7970/api/ping HTTP/1.1
+Content-Type: application/json

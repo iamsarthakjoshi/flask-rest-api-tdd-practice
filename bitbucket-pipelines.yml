@@ -1,0 +1,51 @@
+#bitbucket-pipelines.yml
+pipelines:
+  branches:
+    development:
+      - step:
+          name: Zip & Create Backend Artifact
+          script:
+            - mkdir packaged
+            - tar --exclude=".gitignore" --exclude=".git" --exclude="packaged" --exclude="bitbucket-pipelines.yml" -czvf packaged/package-${BITBUCKET_BUILD_NUMBER}.tar.gz -C . .
+          artifacts:
+            - packaged/**
+      - step:
+          name: Deploy to Server
+          image: alpine
+          trigger: manual
+          deployment: development
+          script:
+            - mkdir upload
+            - tar -xf packaged/package-${BITBUCKET_BUILD_NUMBER}.tar.gz -C upload
+            - apk update && apk add openssh rsync
+            - rsync -a  -e "ssh -o StrictHostKeyChecking=no" --delete upload/ $USERNAME@$SERVER:development/backendTags/temp/backend-${BITBUCKET_BUILD_NUMBER}
+            # Ignore Warning with CI=false prevents halting of the deploy step (this)
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo rm -r development/backend"
+            # Create backendTags/temp on the remote server's /home/<user>/
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo mv 'development/backendTags/temp/backend-${BITBUCKET_BUILD_NUMBER}' 'development/backend'"
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo chmod -R u+rwX,go+rX,go-w development/backend"
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "cd development/backend && sudo docker-compose down && sudo docker-compose up --build -d && bash && exit"
+    production:
+      - step:
+          name: Zip & Create Backend Artifact
+          script:
+            - mkdir packaged
+            - tar --exclude=".gitignore" --exclude=".git" --exclude="packaged" --exclude="bitbucket-pipelines.yml" -czvf packaged/package-${BITBUCKET_BUILD_NUMBER}.tar.gz -C . .
+          artifacts:
+            - packaged/**
+      - step:
+          name: Deploy to Server
+          image: alpine
+          trigger: manual
+          deployment: production
+          script:
+            - mkdir upload
+            - tar -xf packaged/package-${BITBUCKET_BUILD_NUMBER}.tar.gz -C upload
+            - apk update && apk add openssh rsync
+            - rsync -a  -e "ssh -o StrictHostKeyChecking=no" --delete upload/ $USERNAME@$SERVER:production/backendTags/temp/backend-${BITBUCKET_BUILD_NUMBER}
+            # Ignore Warning with CI=false prevents halting of the deploy step (this)
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo rm -r production/backend"
+            # Create backendTags/temp on the remote server's /home/<user>/
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo mv 'production/backendTags/temp/backend-${BITBUCKET_BUILD_NUMBER}' 'production/backend'"
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "sudo chmod -R u+rwX,go+rX,go-w production/backend"
+            - CI=false ssh -o StrictHostKeyChecking=no $USERNAME@$SERVER "cd production/backend && sudo docker-compose down && sudo docker-compose up --build -d && bash && exit"

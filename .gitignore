@@ -1,0 +1,36 @@
+### OSX ###
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environments
+.python-version
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py.class
+venv/*
+.idea/*
+*.db
+*/__pycache__/*.pyc
+logs
+*.log
+build/*
+main_log.log.*
+*/__pycache__/
+nohup.out
+alembic/versions/__pycache__/*
+__pycache__/*
+*/tests/results/*
+*__pycache__/
+company-policy.pdf
+
+# Distribution / packaging
+.Python
+build/
+dist/
+
+#Vscode
+.vscode
